@@ -6,16 +6,59 @@ import XCTest
 import FeedStoreChallenge
 
 class LocalFeedStore: FeedStore {
+	private struct Cache: Codable {
+		let feed: [CodableFeedImage]
+		let timestamp: Date
+		
+		var toLocal: [LocalFeedImage] {
+			feed.map { $0.local }
+		}
+	}
+	
+	private struct CodableFeedImage: Codable {
+		public let id: UUID
+		public let description: String?
+		public let location: String?
+		public let url: URL
+		
+		init(_ image: LocalFeedImage) {
+			self.id = image.id
+			self.description = image.description
+			self.location = image.location
+			self.url = image.url
+		}
+		
+		var local: LocalFeedImage {
+			LocalFeedImage(id: id, description: description, location: location, url: url)
+		}
+	}
+	
+	let storeURL: URL
+	
+	init(storeURL: URL) {
+		self.storeURL = storeURL
+	}
+	
 	func deleteCachedFeed(completion: @escaping DeletionCompletion) {
 		
 	}
 	
 	func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-		
+		let encoder = JSONEncoder()
+		let cache = Cache(feed: feed.map { CodableFeedImage($0) }, timestamp: timestamp)
+		let data = try! encoder.encode(cache)
+		try! data.write(to: storeURL)
+		completion(nil)
 	}
 	
 	func retrieve(completion: @escaping RetrievalCompletion) {
-		completion(.empty)
+		guard let data = try? Data(contentsOf: storeURL) else {
+			return completion(.empty)
+		}
+		
+		let decoder = JSONDecoder()
+		let cache = try! decoder.decode(Cache.self, from: data)
+		completion(.found(feed: cache.toLocal, timestamp: cache.timestamp))
 	}
 	
 	
@@ -35,6 +78,16 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	//
 	//  ***********************
 	
+	override func setUp() {
+		super.setUp()
+		try? FileManager.default.removeItem(at: testSpecificStoreURL())
+	}
+	
+	override func tearDown() {
+		super.tearDown()
+		try? FileManager.default.removeItem(at: testSpecificStoreURL())
+	}
+	
 	func test_retrieve_deliversEmptyOnEmptyCache() {
 		let sut = makeSUT()
 		
@@ -48,9 +101,9 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 	
 	func test_retrieve_deliversFoundValuesOnNonEmptyCache() {
-		//		let sut = makeSUT()
-		//
-		//		assertThatRetrieveDeliversFoundValuesOnNonEmptyCache(on: sut)
+		let sut = makeSUT()
+		
+		assertThatRetrieveDeliversFoundValuesOnNonEmptyCache(on: sut)
 	}
 	
 	func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
@@ -110,9 +163,12 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	// - MARK: Helpers
 	
 	private func makeSUT() -> FeedStore {
-		return LocalFeedStore()
+		return LocalFeedStore(storeURL: testSpecificStoreURL())
 	}
 	
+	private func testSpecificStoreURL() -> URL {
+		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!.appendingPathComponent("\(type(of: self)).cache")
+	}
 }
 
 //  ***********************
