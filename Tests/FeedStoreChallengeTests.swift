@@ -80,12 +80,14 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	
 	override func setUp() {
 		super.setUp()
-		try? FileManager.default.removeItem(at: testSpecificStoreURL())
+		
+		deleteStoreArtifacts()
 	}
 	
 	override func tearDown() {
 		super.tearDown()
-		try? FileManager.default.removeItem(at: testSpecificStoreURL())
+		
+		deleteStoreArtifacts()
 	}
 	
 	func test_retrieve_deliversEmptyOnEmptyCache() {
@@ -168,6 +170,10 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	
 	private func testSpecificStoreURL() -> URL {
 		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!.appendingPathComponent("\(type(of: self)).cache")
+	}
+	
+	private func deleteStoreArtifacts() {
+		try? FileManager.default.removeItem(at: testSpecificStoreURL())
 	}
 }
 
