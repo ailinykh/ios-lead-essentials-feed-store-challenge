@@ -60,7 +60,7 @@ public class CodableFeedStore: FeedStore {
 	
 	public func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
 		let storeURL = self.storeURL
-		queue.async {
+		queue.async(flags: .barrier) {
 			do {
 				let encoder = JSONEncoder()
 				let cache = Cache(feed: feed.map { CodableFeedImage($0) }, timestamp: timestamp)

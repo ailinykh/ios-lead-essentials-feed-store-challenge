@@ -106,9 +106,15 @@ extension FeedStoreSpecs where Self: XCTestCase {
 			op3.fulfill()
 		}
 		
+		let op4 = expectation(description: "Operation 4")
+		sut.retrieve(completion: { _ in
+			completedOperationsInOrder.append(op4)
+			op4.fulfill()
+		})
+		
 		waitForExpectations(timeout: 5.0)
 		
-		XCTAssertEqual(completedOperationsInOrder, [op1, op2, op3], "Expected side-effects to run serially but operations finished in the wrong order", file: file, line: line)
+		XCTAssertEqual(completedOperationsInOrder, [op1, op2, op3, op4], "Expected side-effects to run serially but operations finished in the wrong order", file: file, line: line)
 	}
 	
 }
