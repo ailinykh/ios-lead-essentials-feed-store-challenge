@@ -224,9 +224,10 @@ extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
 	}
 
 	func test_insert_hasNoSideEffectsOnInsertionError() {
-//		let sut = makeSUT()
-//
-//		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
+		let invalidStoreURL = URL(string: "invalid-url://nothing")!
+		let sut = makeSUT(url: invalidStoreURL)
+
+		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
 	}
 
 }
