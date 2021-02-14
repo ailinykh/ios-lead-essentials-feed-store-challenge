@@ -40,8 +40,15 @@ class LocalFeedStore: FeedStore {
 	}
 	
 	func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-		try? FileManager.default.removeItem(at: storeURL)
-		completion(nil)
+		guard FileManager.default.fileExists(atPath: storeURL.path) else {
+			return completion(nil)
+		}
+		do {
+			try FileManager.default.removeItem(at: storeURL)
+			completion(nil)
+		} catch {
+			completion(error)
+		}
 	}
 	
 	func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
@@ -178,7 +185,11 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	}
 	
 	private func testSpecificStoreURL() -> URL {
-		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!.appendingPathComponent("\(type(of: self)).cache")
+		cacheDirectory().appendingPathComponent("\(type(of: self)).cache")
+	}
+	
+	private func cacheDirectory() -> URL {
+		FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
 	}
 	
 	private func deleteStoreArtifacts() {
@@ -232,18 +243,19 @@ extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
 
 }
 
-//extension FeedStoreChallengeTests: FailableDeleteFeedStoreSpecs {
+extension FeedStoreChallengeTests: FailableDeleteFeedStoreSpecs {
+
+	func test_delete_deliversErrorOnDeletionError() {
+		let nonDeletePermissionURL = cacheDirectory()
+		let sut = makeSUT(url: nonDeletePermissionURL)
+
+		assertThatDeleteDeliversErrorOnDeletionError(on: sut)
+	}
+
+	func test_delete_hasNoSideEffectsOnDeletionError() {
+//		let sut = makeSUT()
 //
-//	func test_delete_deliversErrorOnDeletionError() {
-////		let sut = makeSUT()
-////
-////		assertThatDeleteDeliversErrorOnDeletionError(on: sut)
-//	}
-//
-//	func test_delete_hasNoSideEffectsOnDeletionError() {
-////		let sut = makeSUT()
-////
-////		assertThatDeleteHasNoSideEffectsOnDeletionError(on: sut)
-//	}
-//
-//}
+//		assertThatDeleteHasNoSideEffectsOnDeletionError(on: sut)
+	}
+
+}
