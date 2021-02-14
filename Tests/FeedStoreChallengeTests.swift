@@ -45,10 +45,14 @@ class LocalFeedStore: FeedStore {
 	}
 	
 	func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping InsertionCompletion) {
-		let encoder = JSONEncoder()
-		let cache = Cache(feed: feed.map { CodableFeedImage($0) }, timestamp: timestamp)
-		let data = try! encoder.encode(cache)
-		try! data.write(to: storeURL)
+		do {
+			let encoder = JSONEncoder()
+			let cache = Cache(feed: feed.map { CodableFeedImage($0) }, timestamp: timestamp)
+			let data = try encoder.encode(cache)
+			try data.write(to: storeURL)
+		} catch {
+			return completion(error)
+		}
 		completion(nil)
 	}
 	
@@ -169,8 +173,8 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 	
 	// - MARK: Helpers
 	
-	private func makeSUT() -> FeedStore {
-		return LocalFeedStore(storeURL: testSpecificStoreURL())
+	private func makeSUT(url: URL? = nil) -> FeedStore {
+		return LocalFeedStore(storeURL: url ?? testSpecificStoreURL())
 	}
 	
 	private func testSpecificStoreURL() -> URL {
@@ -210,21 +214,22 @@ extension FeedStoreChallengeTests: FailableRetrieveFeedStoreSpecs {
 
 }
 
-//extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
+extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
+
+	func test_insert_deliversErrorOnInsertionError() {
+		let invalidStoreURL = URL(string: "invalid-url://nothing")!
+		let sut = makeSUT(url: invalidStoreURL)
+
+		assertThatInsertDeliversErrorOnInsertionError(on: sut)
+	}
+
+	func test_insert_hasNoSideEffectsOnInsertionError() {
+//		let sut = makeSUT()
 //
-//	func test_insert_deliversErrorOnInsertionError() {
-////		let sut = makeSUT()
-////
-////		assertThatInsertDeliversErrorOnInsertionError(on: sut)
-//	}
-//
-//	func test_insert_hasNoSideEffectsOnInsertionError() {
-////		let sut = makeSUT()
-////
-////		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
-//	}
-//
-//}
+//		assertThatInsertHasNoSideEffectsOnInsertionError(on: sut)
+	}
+
+}
 
 //extension FeedStoreChallengeTests: FailableDeleteFeedStoreSpecs {
 //
