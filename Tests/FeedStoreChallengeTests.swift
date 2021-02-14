@@ -57,9 +57,13 @@ class LocalFeedStore: FeedStore {
 			return completion(.empty)
 		}
 		
-		let decoder = JSONDecoder()
-		let cache = try! decoder.decode(Cache.self, from: data)
-		completion(.found(feed: cache.toLocal, timestamp: cache.timestamp))
+		do {
+			let decoder = JSONDecoder()
+			let cache = try decoder.decode(Cache.self, from: data)
+			completion(.found(feed: cache.toLocal, timestamp: cache.timestamp))
+		} catch {
+			completion(.failure(error))
+		}
 	}
 	
 	
@@ -186,21 +190,22 @@ class FeedStoreChallengeTests: XCTestCase, FeedStoreSpecs {
 //
 //  ***********************
 
-//extension FeedStoreChallengeTests: FailableRetrieveFeedStoreSpecs {
+extension FeedStoreChallengeTests: FailableRetrieveFeedStoreSpecs {
+
+	func test_retrieve_deliversFailureOnRetrievalError() {
+		let sut = makeSUT()
+		try! Data("Invalid Data".utf8).write(to: testSpecificStoreURL())
+		
+		assertThatRetrieveDeliversFailureOnRetrievalError(on: sut)
+	}
+
+	func test_retrieve_hasNoSideEffectsOnFailure() {
+//		let sut = makeSUT()
 //
-//	func test_retrieve_deliversFailureOnRetrievalError() {
-////		let sut = makeSUT()
-////
-////		assertThatRetrieveDeliversFailureOnRetrievalError(on: sut)
-//	}
-//
-//	func test_retrieve_hasNoSideEffectsOnFailure() {
-////		let sut = makeSUT()
-////
-////		assertThatRetrieveHasNoSideEffectsOnFailure(on: sut)
-//	}
-//
-//}
+//		assertThatRetrieveHasNoSideEffectsOnFailure(on: sut)
+	}
+
+}
 
 //extension FeedStoreChallengeTests: FailableInsertFeedStoreSpecs {
 //
