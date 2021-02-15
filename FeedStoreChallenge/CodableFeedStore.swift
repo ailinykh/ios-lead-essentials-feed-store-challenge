@@ -66,10 +66,10 @@ public class CodableFeedStore: FeedStore {
 				let cache = Cache(feed: feed.map { CodableFeedImage($0) }, timestamp: timestamp)
 				let data = try encoder.encode(cache)
 				try data.write(to: storeURL)
+				completion(nil)
 			} catch {
-				return completion(error)
+				completion(error)
 			}
-			completion(nil)
 		}
 	}
 	
